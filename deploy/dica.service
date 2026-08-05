@@ -5,11 +5,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=dika
+User=pi
 Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/dika/.Xauthority
-WorkingDirectory=/home/dika/projects/dish-counter-apparatus
-ExecStart=/bin/bash /home/dika/projects/dish-counter-apparatus/run.sh
+Environment=XAUTHORITY=/home/pi/.Xauthority
+WorkingDirectory=/home/pi/dica
+ExecStart=/bin/bash /home/pi/dica/run.sh
 Restart=always
 RestartSec=5
 
