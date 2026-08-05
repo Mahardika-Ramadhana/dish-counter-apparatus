@@ -1,0 +1,17 @@
+[Unit]
+Description=Dish Counter Apparatus (DICA) Auto-start Service
+After=network.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dika
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/dika/.Xauthority
+WorkingDirectory=/home/dika/projects/dish-counter-apparatus
+ExecStart=/bin/bash /home/dika/projects/dish-counter-apparatus/run.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
