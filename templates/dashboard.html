@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Penjualan - Dish Counter</title>
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --bg-gradient-1: #18181b;
+            --bg-gradient-2: #27272a;
+            --accent-1: #3b82f6;
+            --accent-2: #8b5cf6;
+            --accent-3: #10b981;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        nav {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card .value {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Chart Section */
+        .chart-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+            height: 400px;
+        }
+
+        /* Table Section */
+        .table-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .export-btn:hover {
+            opacity: 0.9;
+        }
+
+        .table-wrapper {
+            overflow-y: auto;
+            flex-grow: 1;
+            max-height: 400px;
+        }
+        
+        .table-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .table-wrapper::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
+        
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            text-align: left;
+        }
+
+        th {
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 15px;
+        }
+
+        tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .badge-menu {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="brand">DishAnalytics™</div>
+        <div class="nav-links">
+            <a href="/">Kasir Utama</a>
+            <a href="/laporan" style="color: var(--text-main);">Laporan</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="card fade-in delay-1">
+                <h3>Total Pendapatan</h3>
+                <p class="value" id="valRevenue">Rp0</p>
+            </div>
+            <div class="card fade-in delay-2">
+                <h3>Total Transaksi</h3>
+                <p class="value" id="valTransactions">0</p>
+            </div>
+            <div class="card fade-in delay-3">
+                <h3>Menu Terlaris</h3>
+                <p class="value" id="valTopItem" style="font-size: 32px; line-height: 1.5; background: linear-gradient(135deg, var(--accent-1), var(--accent-3)); -webkit-background-clip: text;">-</p>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <!-- Chart Area -->
+            <div class="chart-container fade-in delay-2">
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <!-- Recent Transactions Table -->
+            <div class="table-container fade-in delay-3">
+                <div class="table-header">
+                    <h3>Riwayat Terkini</h3>
+                    <button class="export-btn" onclick="window.location.href='/api/export_transactions'">Unduh CSV</button>
+                </div>
+                <div class="table-wrapper">
+                    <table id="transactionTable">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Menu</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch data and render
+        fetch('/api/transactions')
+            .then(res => res.json())
+            .then(data => {
+                // Process Data
+                let totalRevenue = 0;
+                let itemCount = {};
+                let chartLabels = [];
+                let chartData = [];
+                let transactionsRev = [...data].reverse(); // oldest first for chart
+
+                // For chart aggregation by time/day
+                let timeline = {};
+
+                data.forEach(t => {
+                    totalRevenue += t.total_harga;
+                    
+                    // Aggregate items
+                    t.items.forEach(item => {
+                        itemCount[item] = (itemCount[item] || 0) + 1;
+                    });
+
+                    // Aggregate for chart (by Date string)
+                    let dateStr = t.timestamp.split(' ')[0]; // Just the date part
+                    // Or if we want hour: let dateStr = t.timestamp.substring(0, 13) + ":00"; 
+                    timeline[dateStr] = (timeline[dateStr] || 0) + t.total_harga;
+                });
+
+                // Top Item
+                let topItem = '-';
+                let maxQty = 0;
+                for (const [item, qty] of Object.entries(itemCount)) {
+                    if (qty > maxQty) {
+                        maxQty = qty;
+                        topItem = item;
+                    }
+                }
+
+                // Update UI
+                document.getElementById('valRevenue').innerText = 'Rp' + totalRevenue.toLocaleString('id-ID');
+                document.getElementById('valTransactions').innerText = data.length;
+                document.getElementById('valTopItem').innerText = topItem;
+
+                // Render Table
+                const tbody = document.querySelector('#transactionTable tbody');
+                data.forEach(t => {
+                    let timeParts = t.timestamp.split(' ');
+                    let timeStr = timeParts.length > 1 ? timeParts[1].substring(0,5) : t.timestamp; // Get HH:MM
+                    
+                    let badges = t.items.map(i => `<span class="badge-menu">${i}</span>`).join('');
+
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="color: var(--text-muted)">${timeStr}</td>
+                        <td>${badges}</td>
+                        <td style="font-weight: 600; color: var(--accent-3)">Rp${t.total_harga.toLocaleString('id-ID')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Prepare Chart Data
+                Object.keys(timeline).sort().forEach(key => {
+                    chartLabels.push(key);
+                    chartData.push(timeline[key]);
+                });
+
+                // Render Chart
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                
+                // Gradient for chart
+                let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');   
+                gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels.length > 0 ? chartLabels : ['Belum ada data'],
+                        datasets: [{
+                            label: 'Pendapatan (Rp)',
+                            data: chartData.length > 0 ? chartData : [0],
+                            borderColor: '#3b82f6',
+                            borderWidth: 3,
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#09090b',
+                            pointBorderColor: '#3b82f6',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(9, 9, 11, 0.9)',
+                                titleFont: { family: 'Outfit', size: 14 },
+                                bodyFont: { family: 'Outfit', size: 16, weight: 'bold' },
+                                padding: 15,
+                                cornerRadius: 10,
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: { family: 'Outfit' },
+                                    callback: function(value) {
+                                        return 'Rp' + value.toLocaleString('id-ID');
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: { display: false, drawBorder: false },
+                                ticks: { color: '#94a3b8', font: { family: 'Outfit' } }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                    }
+                });
+            })
+            .catch(err => console.error("Error fetching data:", err));
+    </script>
+</body>
+</html>
