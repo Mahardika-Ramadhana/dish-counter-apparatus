@@ -133,7 +133,7 @@ def start_web_server(main_app):
 
     @app.route('/laporan')
     def laporan():
-        return render_template('dashboard.html')
+        return render_template('dashboard.html', api_key=config.API_KEY)
         
     @app.route('/api/transactions')
     def api_transactions():
@@ -142,6 +142,11 @@ def start_web_server(main_app):
 
     @app.route('/api/sync_cloud', methods=['POST'])
     def sync_cloud():
+        # Proteksi keamanan Endpoint (API Key)
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or auth_header != f"Bearer {config.API_KEY}":
+            return jsonify({'status': 'error', 'message': 'Akses ditolak: API Key tidak valid'}), 401
+
         sync_module = CloudSync(
             db_lokal=main_app.db.db_name, 
             supabase_url=config.SUPABASE_URL, 

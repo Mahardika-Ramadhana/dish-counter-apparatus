@@ -366,7 +366,13 @@
             btn.innerText = "⏳ Menyinkronkan...";
             btn.disabled = true;
 
-            fetch('/api/sync_cloud', { method: 'POST' })
+            const apiKey = "{{ api_key }}";
+            fetch('/api/sync_cloud', { 
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + apiKey
+                }
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
