@@ -46,3 +46,5 @@ INPUT_SIZE = (640, 640)
 # Kredensial Supabase Cloud Sync
 SUPABASE_URL = _json_data.get('supabase_url', '')
 SUPABASE_KEY = _json_data.get('supabase_key', '')
+API_KEY = _json_data.get('api_key', 'gemastik2026_dica_secure')
+
