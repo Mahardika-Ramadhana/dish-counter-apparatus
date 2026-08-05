@@ -80,13 +80,16 @@ class LoadCell:
         for _ in range(5):
             try:
                 samples.append(self.channel_a.value)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[Hardware Fail-Safe] Error baca loadcell: {e}")
             time.sleep(0.1)
             
         if samples:
             avg_val = sum(samples) / len(samples)
             weight = (avg_val - self.offset) / self.scale
             return max(0.0, weight)
+        else:
+            print("[Hardware Fail-Safe] Kabel timbangan terputus! Mencoba re-inisialisasi HX711...")
+            self.init_loadcell()
         
         return 0.0

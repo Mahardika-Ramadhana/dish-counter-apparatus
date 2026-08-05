@@ -20,11 +20,23 @@ class CameraManager:
         return success
 
     def capture_frame(self, cam_id: int):
-        """Ambil frame dari camera_id tertentu."""
+        """Ambil frame dari camera_id tertentu dengan fail-safe auto-reconnect."""
         if cam_id in self.cameras:
             ret, frame = self.cameras[cam_id].read()
             if ret:
                 return frame
+            else:
+                # Fail-safe: Kamera mungkin terputus, coba reconnect
+                print(f"[Hardware Fail-Safe] Kamera {cam_id} terputus! Mencoba auto-reconnect...")
+                self.cameras[cam_id].release()
+                import time
+                time.sleep(1) # Beri waktu OS mendeteksi ulang USB
+                new_cap = cv2.VideoCapture(cam_id)
+                if new_cap.isOpened():
+                    self.cameras[cam_id] = new_cap
+                    print(f"[Hardware Fail-Safe] Kamera {cam_id} berhasil tersambung kembali.")
+                else:
+                    print(f"[Hardware Fail-Safe] Gagal menyambung ulang kamera {cam_id}.")
         return None
 
     def get_frame_for_display(self, cam_id: int = 0):
