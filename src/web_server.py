@@ -3,6 +3,8 @@ import logging
 import cv2
 import qrcode
 import io
+import config
+from cloud_sync import CloudSync
 # Matikan log bawaan flask agar terminal tidak kotor
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -137,5 +139,15 @@ def start_web_server(main_app):
     def api_transactions():
         transactions = main_app.db.get_all_transactions()
         return jsonify(transactions)
+
+    @app.route('/api/sync_cloud', methods=['POST'])
+    def sync_cloud():
+        sync_module = CloudSync(
+            db_lokal=main_app.db.db_name, 
+            supabase_url=config.SUPABASE_URL, 
+            supabase_key=config.SUPABASE_KEY
+        )
+        result = sync_module.sync_unpushed_transactions()
+        return jsonify(result)
 
     app.run(host='0.0.0.0', port=5000, threaded=True, use_reloader=False)

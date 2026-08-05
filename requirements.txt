@@ -12,3 +12,4 @@ Flask
 qrcode
 ai-edge-litert
 ultralytics
+supabase

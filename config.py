@@ -42,3 +42,7 @@ CAMERA_IDS = [0, 2]  # 0: Kamera Laptop (Atas), 2: Webcam (Samping)
 MODEL_PATH = "model.tflite"
 CONFIDENCE_THRESHOLD = 0.5
 INPUT_SIZE = (640, 640)
+
+# Kredensial Supabase Cloud Sync
+SUPABASE_URL = _json_data.get('supabase_url', '')
+SUPABASE_KEY = _json_data.get('supabase_key', '')

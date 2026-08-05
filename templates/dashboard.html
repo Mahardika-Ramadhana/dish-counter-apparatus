@@ -195,8 +195,22 @@
             transition: opacity 0.3s ease;
         }
 
-        .export-btn:hover {
+        .export-btn:hover, .sync-btn:hover {
             opacity: 0.9;
+        }
+
+        .sync-btn {
+            background: linear-gradient(135deg, var(--accent-3), #059669);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            margin-right: 10px;
         }
 
         .table-wrapper {
@@ -322,7 +336,10 @@
             <div class="table-container fade-in delay-3">
                 <div class="table-header">
                     <h3>Riwayat Terkini</h3>
-                    <button class="export-btn" onclick="window.location.href='/api/export_transactions'">Unduh CSV</button>
+                    <div>
+                        <button class="sync-btn" id="btnSyncCloud" onclick="syncToCloud()">☁️ Sync ke Cloud</button>
+                        <button class="export-btn" onclick="window.location.href='/api/export_transactions'">Unduh CSV</button>
+                    </div>
                 </div>
                 <div class="table-wrapper">
                     <table id="transactionTable">
@@ -343,6 +360,31 @@
     </div>
 
     <script>
+        // Sync to cloud function
+        function syncToCloud() {
+            const btn = document.getElementById('btnSyncCloud');
+            btn.innerText = "⏳ Menyinkronkan...";
+            btn.disabled = true;
+
+            fetch('/api/sync_cloud', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                    } else {
+                        alert("Gagal: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    alert("Error saat sinkronisasi!");
+                    console.error(err);
+                })
+                .finally(() => {
+                    btn.innerText = "☁️ Sync ke Cloud";
+                    btn.disabled = false;
+                });
+        }
+
         // Fetch data and render
         fetch('/api/transactions')
             .then(res => res.json())
