@@ -1,0 +1,15 @@
+[Unit]
+Description=Dish Counter Apparatus (DICA) Headless Auto-start Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/dica
+ExecStart=/bin/bash /home/pi/dica/run.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
