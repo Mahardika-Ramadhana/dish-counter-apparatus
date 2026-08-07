@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Penjual - Dish Counter</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary: #3b82f6;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --text: #f8fafc;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        h1 { margin-top: 0; text-align: center; font-size: 24px; font-weight: 600; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            margin-bottom: 15px;
+        }
+        .status-badge.active { background: rgba(16, 185, 129, 0.2); color: #10b981; border-color: rgba(16, 185, 129, 0.5); }
+        .status-badge.warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); }
+        
+        .image-preview {
+            width: 100%;
+            border-radius: 12px;
+            margin: 10px 0;
+            display: none;
+            border: 2px solid var(--glass-border);
+        }
+
+        .price-display {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+        }
+        .item-list { list-style: none; padding: 0; margin: 0; }
+        .item-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .qty-controls { display: flex; align-items: center; gap: 10px; }
+        .qty-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .qty-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            display: none;
+        }
+        .btn-success { background: var(--success); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+        .btn-warning { background: var(--warning); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); }
+        .btn-warning:hover { background: #d97706; transform: translateY(-2px); }
+        .btn-primary { background: var(--primary); display: block; }
+        .btn-primary:hover { background: #2563eb; }
+        
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.2); transition: .4s; border-radius: 26px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(24px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Kasir Pintar (Penjual)</h1>
+            <div style="text-align: center;">
+                <div id="statusBadge" class="status-badge">Menunggu Pembeli...</div>
+            </div>
+            
+            <div id="occlusionWarning" style="display:none; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: bold; font-size: 14px;">
+                ⚠️ PERINGATAN: Deteksi tumpang tindih (Occlusion)! Periksa gambar asli.
+            </div>
+            
+            <div id="imageToggleWrapper" style="display:none; text-align: center; margin-bottom: 5px;">
+                <label style="font-size: 14px; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <input type="checkbox" id="rawImageToggle" onchange="updateImageSource()"> 
+                    <span>Tampilkan Gambar Asli (Tanpa Sensor)</span>
+                </label>
+            </div>
+            <img id="detectImage" class="image-preview" src="" alt="Deteksi AI">
+            
+            <div id="priceDisplay" class="price-display">Rp0</div>
+            
+            <ul id="itemList" class="item-list">
+                <li style="color: #94a3b8; text-align: center; border: none;">Tidak ada transaksi aktif</li>
+            </ul>
+            
+            <button id="btnValidate" class="btn btn-warning" onclick="validateToCustomer()">TAMPILKAN KE PEMBELI</button>
+            <button id="btnConfirm" class="btn btn-success" onclick="confirmPayment()">TERIMA PEMBAYARAN (QRIS)</button>
+        </div>
+        
+        <div class="card">
+            <h3 style="margin-top:0">Kontrol Alat</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Berat Sensor Saat Ini:</span>
+                <strong id="weightDisplay">0.0 g</strong>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+                <span>Mode Otomatis (Tanpa Verifikasi):</span>
+                <label class="switch">
+                    <input type="checkbox" id="autoToggle" onchange="toggleAutoValidate()">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            
+            <button class="btn btn-primary" style="padding: 10px; font-size: 16px; margin-top:15px;" onclick="tareSensor()">Kalibrasi Timbangan (Tare)</button>
+        </div>
+        <div class="card">
+            <h3 style="margin-top:0">Manajemen Data Transaksi</h3>
+            <div style="display:flex; flex-direction:column; gap: 10px; margin-top:10px;">
+                <button class="btn btn-primary" style="display:block; padding: 10px; font-size: 16px; background-color: #8b5cf6;" onclick="window.location.href='/laporan'">📊 Lihat Dashboard Laporan</button>
+                <button class="btn btn-success" style="display:block; padding: 10px; font-size: 16px;" onclick="exportData()">⬇️ Unduh Data (CSV)</button>
+                <button class="btn btn-warning" style="display:block; padding: 10px; font-size: 16px; background-color: #ef4444;" onclick="clearData()">🗑️ Hapus Semua Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "{{ api_key }}";
+        const authHeaders = {
+            'Authorization': 'Bearer ' + API_KEY
+        };
+        
+        let itemCounts = {};
+        let currentState = 'IDLE';
+
+        // Daftar Menu & Harga Dasar
+        const BasePrices = {
+            'nasi (1.0 porsi)': 5000,
+            'nasi (0.5 porsi)': 2500,
+            'telur': 3000,
+            'tahu': 2000,
+            'tempe': 2000,
+            'ayam_goreng': 10000,
+            'sambal': 0
+        };
+
+        function renderEditor() {
+            const list = document.getElementById('itemList');
+            const price = document.getElementById('priceDisplay');
+            list.innerHTML = '';
+            
+            let total = 0;
+            for (const [name, qty] of Object.entries(itemCounts)) {
+                if (qty > 0) {
+                    let p = (BasePrices[name] || 0);
+                    let subtotal = p * qty;
+                    total += subtotal;
+                    
+                    list.innerHTML += `
+                    <li>
+                        <span>${name} <br> <small style="color:#94a3b8">Rp${p.toLocaleString('id-ID')} x ${qty}</small></span>
+                        <div class="qty-controls">
+                            <button class="qty-btn" onclick="changeQty('${name}', -1)">-</button>
+                            <span style="font-weight:bold; width:20px; text-align:center">${qty}</span>
+                            <button class="qty-btn" onclick="changeQty('${name}', 1)">+</button>
+                        </div>
+                    </li>`;
+                }
+            }
+            
+            // Tambahkan dropdown untuk menambah menu manual
+            let options = `<option value="" style="color: black;">+ Tambah Menu / Lauk...</option>`;
+            for (const name of Object.keys(BasePrices)) {
+                options += `<option value="${name}" style="color: black;">${name}</option>`;
+            }
+            
+            list.innerHTML += `
+            <li style="border:none; margin-top: 15px;">
+                <select id="addMenu" onchange="addManualItem()" style="width:100%; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.4); outline: none; font-size: 16px;">
+                    ${options}
+                </select>
+            </li>`;
+            
+            price.innerText = 'Rp' + total.toLocaleString('id-ID');
+        }
+
+        function changeQty(name, delta) {
+            itemCounts[name] = (itemCounts[name] || 0) + delta;
+            if (itemCounts[name] < 0) itemCounts[name] = 0;
+            renderEditor();
+        }
+        
+        function addManualItem() {
+            const sel = document.getElementById('addMenu');
+            if (sel.value) {
+                changeQty(sel.value, 1);
+                sel.value = ""; // Reset dropdown
+            }
+        }
+
+        function updateStatus() {
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('weightDisplay').innerText = data.weight.toFixed(1) + ' g';
+                    
+                    // Jangan update checked state jika sedang di-klik oleh user (fokus)
+                    let autoToggle = document.getElementById('autoToggle');
+                    if (document.activeElement !== autoToggle) {
+                        autoToggle.checked = data.auto_validate;
+                    }
+                    
+                    const badge = document.getElementById('statusBadge');
+                    const btnValidate = document.getElementById('btnValidate');
+                    const btnConfirm = document.getElementById('btnConfirm');
+                    const img = document.getElementById('detectImage');
+                    const occlusionWarning = document.getElementById('occlusionWarning');
+                    const imgToggle = document.getElementById('imageToggleWrapper');
+                    
+                    // Update occlusion warning
+                    if (data.has_occlusion && data.state === 'VALIDATION') {
+                        occlusionWarning.style.display = 'block';
+                    } else {
+                        occlusionWarning.style.display = 'none';
+                    }
+                    
+                    // Only update list if state changed to prevent overriding edits
+                    if (currentState !== data.state) {
+                        currentState = data.state;
+                        
+                        if (currentState === 'VALIDATION') {
+                            badge.className = 'status-badge warning pulse';
+                            badge.innerText = '⚠️ CEK HASIL DETEKSI';
+                            
+                            // Konversi dari array deteksi menjadi jumlah terkelompok
+                            itemCounts = {};
+                            data.items.forEach(item => {
+                                if (!(item.name in BasePrices)) BasePrices[item.name] = item.price;
+                                itemCounts[item.name] = (itemCounts[item.name] || 0) + 1;
+                            });
+                            
+                            renderEditor();
+                            
+                            img.style.display = 'block';
+                            imgToggle.style.display = 'block';
+                            updateImageSource();
+                            
+                            btnValidate.style.display = 'block';
+                            btnConfirm.style.display = 'none';
+                            
+                        } else if (currentState === 'PAYMENT') {
+                            badge.className = 'status-badge active pulse';
+                            badge.innerText = '✅ MENUNGGU PEMBAYARAN QRIS';
+                            
+                            const list = document.getElementById('itemList');
+                            list.innerHTML = '';
+                            let t = 0;
+                            // Menampilkan rangkuman akhir di status PAYMENT
+                            for (const [name, qty] of Object.entries(itemCounts)) {
+                                if (qty > 0) {
+                                    let subtotal = (BasePrices[name] || 0) * qty;
+                                    t += subtotal;
+                                    list.innerHTML += `<li><span>${name} (x${qty})</span><span>Rp${subtotal.toLocaleString('id-ID')}</span></li>`;
+                                }
+                            }
+                            
+                            document.getElementById('priceDisplay').innerText = 'Rp' + t.toLocaleString('id-ID');
+                            
+                            img.style.display = 'block'; // Keep showing
+                            btnValidate.style.display = 'none';
+                            btnConfirm.style.display = 'block';
+                            btnConfirm.classList.add('pulse');
+                            
+                        } else {
+                            badge.className = 'status-badge';
+                            badge.innerText = 'Menunggu Pembeli...';
+                            document.getElementById('priceDisplay').innerText = 'Rp0';
+                            img.style.display = 'none';
+                            imgToggle.style.display = 'none';
+                            document.getElementById('rawImageToggle').checked = false;
+                            btnValidate.style.display = 'none';
+                            btnConfirm.style.display = 'none';
+                            document.getElementById('itemList').innerHTML = '<li style="color: #94a3b8; text-align: center; border: none;">Tidak ada transaksi aktif</li>';
+                        }
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function updateImageSource() {
+            const img = document.getElementById('detectImage');
+            const isRaw = document.getElementById('rawImageToggle').checked;
+            const endpoint = isRaw ? '/api/image_raw' : '/api/image';
+            img.src = endpoint + '?' + new Date().getTime();
+        }
+
+        function validateToCustomer() {
+            // Ubah kembali itemCounts ke flat array (satu-satu) agar sesuai dengan struktur database
+            let finalItems = [];
+            for (const [name, qty] of Object.entries(itemCounts)) {
+                for (let i = 0; i < qty; i++) {
+                    finalItems.push({name: name, price: BasePrices[name] || 0});
+                }
+            }
+            
+            fetch('/api/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders
+                },
+                body: JSON.stringify({items: finalItems})
+            }).then(res => res.json()).then(data => {
+                updateStatus();
+            });
+        }
+
+        function confirmPayment() {
+            fetch('/api/confirm', {
+                method: 'POST',
+                headers: authHeaders
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Pembayaran Berhasil Dikonfirmasi!');
+                        updateStatus();
+                    }
+                });
+        }
+        
+        function tareSensor() {
+            fetch('/api/tare', {
+                method: 'POST',
+                headers: authHeaders
+            })
+                .then(res => res.json())
+                .then(data => alert('Kalibrasi Timbangan Berhasil!'));
+        }
+        
+        function toggleAutoValidate() {
+            fetch('/api/toggle_auto', {
+                method: 'POST',
+                headers: authHeaders
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('autoToggle').checked = data.auto_validate;
+                });
+        }
+        
+        function exportData() {
+            window.location.href = '/api/export_transactions';
+        }
+        
+        function clearData() {
+            if (confirm("PERINGATAN: Semua data transaksi akan dihapus dari sistem. Anda yakin?")) {
+                fetch('/api/clear_transactions', {
+                    method: 'POST',
+                    headers: authHeaders
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('Semua data berhasil dihapus.');
+                        }
+                    });
+            }
+        }
+
+        setInterval(updateStatus, 1000);
+        updateStatus();
+    </script>
+</body>
+</html>

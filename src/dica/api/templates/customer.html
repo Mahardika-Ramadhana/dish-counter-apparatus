@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layar Pembeli - Dish Counter</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --primary: #3b82f6;
+            --success: #10b981;
+            --text: #f8fafc;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at bottom left, #1e293b, #0f172a);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            justify-content: center;
+        }
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+        }
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            flex: 1;
+        }
+        h1 { margin-top: 0; text-align: center; font-size: 28px; font-weight: 700; color: #fbbf24; }
+        
+        .idle-screen {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+        }
+        .idle-screen h2 { font-size: 36px; color: #94a3b8; }
+        
+        .payment-screen { display: none; }
+        
+        .item-list { list-style: none; padding: 0; margin: 0 0 20px 0; font-size: 18px; }
+        .item-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fbbf24;
+            padding-top: 20px;
+            border-top: 2px dashed rgba(251, 191, 36, 0.5);
+            margin-bottom: 30px;
+        }
+        
+        .qris-container {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .qris-container img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 8px;
+        }
+        .qris-title {
+            color: black;
+            font-weight: 900;
+            font-size: 24px;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="idleScreen" class="idle-screen">
+        <h2>Silakan Taruh Nasi & Lauk Anda di Atas Timbangan</h2>
+        <p style="color: #64748b; font-size: 18px;">AI Kami Akan Menghitung Harga Secara Otomatis 🚀</p>
+    </div>
+
+    <div id="paymentScreen" class="container payment-screen">
+        <div class="card">
+            <h1>Rincian Pesanan</h1>
+            <ul id="customerItemList" class="item-list">
+                <!-- Injected via JS -->
+            </ul>
+            <div class="total-row">
+                <span>Total Bayar:</span>
+                <span id="customerTotal">Rp0</span>
+            </div>
+        </div>
+        
+        <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div class="qris-container pulse">
+                <div class="qris-title">QRIS</div>
+                <img id="qrisImage" src="/api/qr" alt="Scan QRIS">
+                <p style="color: #475569; font-weight: bold; margin-top: 10px;">Scan untuk Membayar</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isPaymentActive = false;
+
+        function updateCustomerScreen() {
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    const idleScreen = document.getElementById('idleScreen');
+                    const paymentScreen = document.getElementById('paymentScreen');
+                    
+                    if (data.state === 'PAYMENT') {
+                        if (!isPaymentActive) {
+                            // Reload QR image to generate new one just in case
+                            document.getElementById('qrisImage').src = '/api/qr?' + new Date().getTime();
+                            isPaymentActive = true;
+                        }
+                        
+                        idleScreen.style.display = 'none';
+                        paymentScreen.style.display = 'flex';
+                        
+                        const list = document.getElementById('customerItemList');
+                        list.innerHTML = '';
+                        
+                        // Group items
+                        let itemCounts = {};
+                        data.items.forEach(item => {
+                            itemCounts[item.name] = (itemCounts[item.name] || {qty: 0, price: item.price});
+                            itemCounts[item.name].qty += 1;
+                        });
+                        
+                        for (const [name, info] of Object.entries(itemCounts)) {
+                            let subtotal = info.price * info.qty;
+                            list.innerHTML += `<li><span>${name} <small style="color:#94a3b8">(x${info.qty})</small></span><span>Rp${subtotal.toLocaleString('id-ID')}</span></li>`;
+                        }
+                        
+                        document.getElementById('customerTotal').innerText = 'Rp' + data.total_price.toLocaleString('id-ID');
+                        
+                    } else {
+                        idleScreen.style.display = 'flex';
+                        paymentScreen.style.display = 'none';
+                        isPaymentActive = false;
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        setInterval(updateCustomerScreen, 1000);
+        updateCustomerScreen();
+    </script>
+</body>
+</html>
