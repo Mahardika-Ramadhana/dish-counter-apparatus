@@ -1,0 +1,36 @@
+{
+  "harga": {
+    "nasi_porsi": 5000,
+    "telur": 3000,
+    "tahu": 2000,
+    "tempe": 2000,
+    "ayam_goreng": 10000,
+    "sambal": 1000,
+    "telur_balado": 3000,
+    "perekedel": 2000,
+    "ayam_rebus": 10000,
+    "ikan_lele": 8000,
+    "ikan_kembung": 8000,
+    "ikan_pindang": 8000,
+    "tempe_mendoan": 2000
+  },
+  "berat_rata_lauk": {
+    "telur": 50.0,
+    "tahu": 30.0,
+    "tempe": 30.0,
+    "ayam_goreng": 80.0,
+    "telur_balado": 30.0,
+    "perekedel": 20.0,
+    "ayam_rebus": 80.0,
+    "ikan_lele": 80.0,
+    "ikan_kembung": 80.0,
+    "ikan_pindang": 80.0,
+    "tempe_mendoan": 20.0
+  },
+  "berat_satu_porsi_nasi": 150.0,
+  "berat_satu_porsi_sambal": 10.0,
+  "environment": "development",
+  "supabase_url": "MASUKKAN_URL_SUPABASE_DI_SINI",
+  "supabase_key": "MASUKKAN_KEY_RAHASIA_DI_SINI",
+  "api_key": "MASUKKAN_API_KEY_APLIKASI_DI_SINI"
+}
