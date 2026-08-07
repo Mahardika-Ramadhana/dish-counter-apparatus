@@ -32,7 +32,6 @@ DICA is an automated, edge-computing point-of-sale (POS) system engineered for h
 ```text
 dish_counter/
   ├── data/                  # Offline SQLite DB & configs
-  ├── learning/              # 📚 Interactive Masterclass & Repository Textbook 
   ├── models/                # YOLO/TFLite model files
   ├── src/dica/              # Main Package
   │   ├── core/              # Config, Logger, StateMachine, App

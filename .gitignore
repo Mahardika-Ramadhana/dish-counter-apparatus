@@ -16,3 +16,4 @@ logs/
 runs/
 dataset/
 data/config.json
+learning/
