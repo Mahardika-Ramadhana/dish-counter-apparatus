@@ -1,13 +1,13 @@
 import time
-import random
-from typing import Optional
-import dica.core.config as config
+
+from dica.core import config
 
 try:
     import board
     import digitalio
-    from adafruit_hx711.hx711 import HX711
     from adafruit_hx711.analog_in import AnalogIn
+    from adafruit_hx711.hx711 import HX711
+
     HX711_AVAILABLE = True
 except ImportError:
     HX711_AVAILABLE = False
@@ -19,24 +19,25 @@ except NotImplementedError:
 
 class LoadCell:
     def __init__(self):
-        self.hx711: Optional['HX711'] = None
-        self.channel_a: Optional['AnalogIn'] = None
+        self.hx711: HX711 | None = None
+        self.channel_a: AnalogIn | None = None
         self.offset = 0.0
         self.scale = 1.0  # Nilai kalibrasi, perlu disesuaikan dengan load cell fisik
 
     def init_loadcell(self):
         """Inisialisasi HX711."""
         if not HX711_AVAILABLE:
-            if getattr(config, 'ENVIRONMENT', 'development') == 'production':
+            if getattr(config, "ENVIRONMENT", "development") == "production":
                 raise RuntimeError(
-                    "❌ BENCANA: Mode Produksi menyala tapi Library adafruit_hx711 / Kabel Timbangan tidak ditemukan! Segera perbaiki hardware!")
+                    "❌ BENCANA: Mode Produksi menyala tapi Library adafruit_hx711 / Kabel Timbangan tidak ditemukan! Segera perbaiki hardware!"
+                )
             print("Mode dummy aktif untuk Load Cell.")
             return
 
         try:
             # Gunakan getattr untuk pin dinamis dari konfigurasi
-            dt_pin = getattr(board, f'D{config.PIN_LOADCELL_DT}', None)
-            sck_pin = getattr(board, f'D{config.PIN_LOADCELL_SCK}', None)
+            dt_pin = getattr(board, f"D{config.PIN_LOADCELL_DT}", None)
+            sck_pin = getattr(board, f"D{config.PIN_LOADCELL_SCK}", None)
 
             if dt_pin and sck_pin:
                 data = digitalio.DigitalInOut(dt_pin)
@@ -47,7 +48,8 @@ class LoadCell:
                 self.tare()
             else:
                 print(
-                    f"Peringatan: Pin D{config.PIN_LOADCELL_DT} atau D{config.PIN_LOADCELL_SCK} tidak valid.")
+                    f"Peringatan: Pin D{config.PIN_LOADCELL_DT} atau D{config.PIN_LOADCELL_SCK} tidak valid."
+                )
 
         except Exception as e:
             print(f"Gagal inisialisasi HX711: {e}")
@@ -55,9 +57,10 @@ class LoadCell:
     def tare(self):
         """Kalibrasi nol (piring kosong)."""
         if not HX711_AVAILABLE or self.channel_a is None:
-            if getattr(config, 'ENVIRONMENT', 'development') == 'production':
+            if getattr(config, "ENVIRONMENT", "development") == "production":
                 raise RuntimeError(
-                    "❌ BENCANA: Gagal melakukan Tare! Mode Produksi menyala tapi hardware timbangan tidak berfungsi!")
+                    "❌ BENCANA: Gagal melakukan Tare! Mode Produksi menyala tapi hardware timbangan tidak berfungsi!"
+                )
             self.offset = 0
             print("Tare selesai (mode dummy).")
             return
@@ -97,8 +100,7 @@ class LoadCell:
             weight = (avg_val - self.offset) / self.scale
             return max(0.0, weight)
         else:
-            print(
-                "[Hardware Fail-Safe] Kabel timbangan terputus! Mencoba re-inisialisasi HX711...")
+            print("[Hardware Fail-Safe] Kabel timbangan terputus! Mencoba re-inisialisasi HX711...")
             self.init_loadcell()
 
         return 0.0

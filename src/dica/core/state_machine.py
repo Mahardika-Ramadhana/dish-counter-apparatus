@@ -1,16 +1,18 @@
-import time
-from typing import List, Dict, Any
+from typing import Any
+
+from dica.core.logger import get_logger
 from dica.db.database import Database
 from dica.hardware.printer import ReceiptPrinter
-from dica.core.logger import get_logger
 
 logger = get_logger("StateMachine")
 
+
 class TransactionState:
-    IDLE = 'IDLE'
-    PROCESSING = 'PROCESSING'
-    VALIDATION = 'VALIDATION'
-    PAYMENT = 'PAYMENT'
+    IDLE = "IDLE"
+    PROCESSING = "PROCESSING"
+    VALIDATION = "VALIDATION"
+    PAYMENT = "PAYMENT"
+
 
 class StateMachine:
     def __init__(self, db: Database, printer: ReceiptPrinter):
@@ -18,12 +20,12 @@ class StateMachine:
         self.printer = printer
         self.state = TransactionState.IDLE
         self.auto_validate = False
-        
-        self.current_detections: List[Dict[str, Any]] = []
+
+        self.current_detections: list[dict[str, Any]] = []
         self.current_total_price: int = 0
         self.current_weight: float = 0.0
-        
-        self.validated_items: List[Dict[str, Any]] = []
+
+        self.validated_items: list[dict[str, Any]] = []
         self.validated_total: int = 0
 
     def trigger_processing(self) -> bool:
@@ -34,11 +36,11 @@ class StateMachine:
             return True
         return False
 
-    def finish_processing(self, detections: List[Dict[str, Any]], total_price: int):
+    def finish_processing(self, detections: list[dict[str, Any]], total_price: int):
         """Transisi dari PROCESSING ke VALIDATION atau PAYMENT (jika auto_validate)."""
         self.current_detections = detections
         self.current_total_price = total_price
-        
+
         if self.auto_validate:
             self.validated_items = detections
             self.validated_total = total_price
@@ -54,7 +56,7 @@ class StateMachine:
             self.state = TransactionState.IDLE
             logger.warning("Pemrosesan dibatalkan. Kembali ke IDLE.")
 
-    def validate_transaction(self, items: List[Dict[str, Any]], total: int):
+    def validate_transaction(self, items: list[dict[str, Any]], total: int):
         """Transisi dari VALIDATION ke PAYMENT."""
         self.validated_items = items
         self.validated_total = total
@@ -73,7 +75,7 @@ class StateMachine:
         self._reset()
         logger.info("Transaksi selesai. Sistem kembali ke mode IDLE.")
         return True
-        
+
     def _reset(self):
         self.current_detections = []
         self.current_total_price = 0

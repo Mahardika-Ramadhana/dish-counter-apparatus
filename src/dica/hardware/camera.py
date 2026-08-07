@@ -1,6 +1,6 @@
 import cv2
-from typing import List, Optional
-import dica.core.config as config
+
+from dica.core import config
 
 
 class CameraManager:
@@ -28,19 +28,17 @@ class CameraManager:
                 return frame
             else:
                 # Fail-safe: Kamera mungkin terputus, coba reconnect
-                print(
-                    f"[Hardware Fail-Safe] Kamera {cam_id} terputus! Mencoba auto-reconnect...")
+                print(f"[Hardware Fail-Safe] Kamera {cam_id} terputus! Mencoba auto-reconnect...")
                 self.cameras[cam_id].release()
                 import time
+
                 time.sleep(1)  # Beri waktu OS mendeteksi ulang USB
                 new_cap = cv2.VideoCapture(cam_id)
                 if new_cap.isOpened():
                     self.cameras[cam_id] = new_cap
-                    print(
-                        f"[Hardware Fail-Safe] Kamera {cam_id} berhasil tersambung kembali.")
+                    print(f"[Hardware Fail-Safe] Kamera {cam_id} berhasil tersambung kembali.")
                 else:
-                    print(
-                        f"[Hardware Fail-Safe] Gagal menyambung ulang kamera {cam_id}.")
+                    print(f"[Hardware Fail-Safe] Gagal menyambung ulang kamera {cam_id}.")
         return None
 
     def get_frame_for_display(self, cam_id: int = 0):

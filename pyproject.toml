@@ -1,0 +1,41 @@
+[project]
+name = "dish-counter-apparatus"
+version = "1.0.0"
+description = "AI-powered self-checkout counter for Warteg utilizing Object Detection and Load Cells."
+authors = [{name = "Tim DICA", email = "dica@example.com"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "opencv-python-headless>=4.8.0",
+    "ultralytics>=8.0.0",
+    "flask>=3.0.0",
+    "qrcode>=7.4",
+    "gpiozero>=2.0",
+    "spidev>=3.5",
+    "pyserial>=3.5",
+    "supabase>=2.0.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.10",
+    "ruff>=0.1.0",
+    "pre-commit>=3.5.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "C90", "N", "UP", "BLE", "B", "A", "C4", "SIM", "ARG", "PTH", "PL", "RUF"]
+ignore = ["ARG001", "RUF059", "BLE001", "PLW1510"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+pythonpath = ["src"]
+addopts = "-v --cov=src/dica --cov-report=term-missing"

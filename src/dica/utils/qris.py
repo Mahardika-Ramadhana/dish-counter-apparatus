@@ -27,9 +27,8 @@ def generate_dynamic_qris(static_qris, amount):
     dynamic_qris_body = parts[0] + tag_54 + "5802ID" + parts[1] + "6304"
 
     # 5. Hitung CRC baru (CRC16 CCITT FALSE)
-    crc16_func = crcmod.mkCrcFun(
-        0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
-    crc_value = crc16_func(dynamic_qris_body.encode('utf-8'))
+    crc16_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0xFFFF, xorOut=0x0000)
+    crc_value = crc16_func(dynamic_qris_body.encode("utf-8"))
     crc_hex = hex(crc_value)[2:].upper().zfill(4)
 
     # 6. Gabungkan menjadi QRIS Final

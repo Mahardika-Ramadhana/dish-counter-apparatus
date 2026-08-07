@@ -1,22 +1,29 @@
 import os
+from typing import Any
+
 import cv2
 import numpy as np
-from typing import List, Dict, Any
-import dica.core.config as config
+
+from dica.core import config
 
 try:
     import tflite_runtime.interpreter as tflite
+
     TFLITE_AVAILABLE = True
 except ImportError:
     try:
         import ai_edge_litert.interpreter as tflite
+
         TFLITE_AVAILABLE = True
     except ImportError:
         TFLITE_AVAILABLE = False
-        print("Peringatan: tflite_runtime / ai_edge_litert tidak ditemukan. Menggunakan mode dummy.")
+        print(
+            "Peringatan: tflite_runtime / ai_edge_litert tidak ditemukan. Menggunakan mode dummy."
+        )
 
 try:
     from ultralytics import YOLO
+
     YOLO_AVAILABLE = True
 except ImportError as e:
     print(f"DEBUG: Gagal memuat ultralytics. Alasan: {e}")
@@ -29,44 +36,49 @@ class ObjectDetector:
         self.yolo_model = None
         self.input_details = None
         self.output_details = None
-        self.labels = {0: 'ayam', 1: 'nasi'}
+        self.labels = {0: "ayam", 1: "nasi"}
         self.is_dummy = True
 
     def load_model(self):
-        is_prod = getattr(config, 'ENVIRONMENT', 'development') == 'production'
+        is_prod = getattr(config, "ENVIRONMENT", "development") == "production"
 
         if not is_prod:
             if not YOLO_AVAILABLE:
                 import tkinter.messagebox as mb
+
                 try:
-                    import ultralytics
+                    pass
                 except Exception as e:
                     mb.showerror(
-                        "Error AI", f"Ultralytics gagal dimuat di Raspberry Pi!\n\nAlasan: {e}\n\nKemungkinan proses instalasi belum selesai atau gagal karena Raspberry Pi kehabisan memori.")
+                        "Error AI",
+                        f"Ultralytics gagal dimuat di Raspberry Pi!\n\nAlasan: {e}\n\nKemungkinan proses instalasi belum selesai atau gagal karena Raspberry Pi kehabisan memori.",
+                    )
 
             if YOLO_AVAILABLE:
                 print(
-                    "INFO: Menggunakan SOTA Model YOLO11 Nano Segment (yolo11n-seg.pt) untuk Uji Coba (Development).")
-                if not os.path.exists('models/yolo11n-seg.pt'):
+                    "INFO: Menggunakan SOTA Model YOLO11 Nano Segment (yolo11n-seg.pt) untuk Uji Coba (Development)."
+                )
+                if not os.path.exists("models/yolo11n-seg.pt"):
                     print("Model YOLO11 tidak ditemukan. Menggunakan mode dummy.")
                     return
-                self.yolo_model = YOLO('models/yolo11n-seg.pt', task='segment')
+                self.yolo_model = YOLO("models/yolo11n-seg.pt", task="segment")
                 self.is_dummy = False
                 return
 
         if not TFLITE_AVAILABLE:
-            if getattr(config, 'ENVIRONMENT', 'development') == 'production':
+            if getattr(config, "ENVIRONMENT", "development") == "production":
                 raise RuntimeError(
-                    "❌ ERROR: Library tflite_runtime tidak ditemukan! Aplikasi menolak menyala.")
+                    "❌ ERROR: Library tflite_runtime tidak ditemukan! Aplikasi menolak menyala."
+                )
             print("Mode dummy aktif untuk Detektor.")
             return
 
         if not os.path.exists(config.MODEL_PATH):
-            if getattr(config, 'ENVIRONMENT', 'development') == 'production':
+            if getattr(config, "ENVIRONMENT", "development") == "production":
                 raise FileNotFoundError(
-                    f"❌ ERROR: Model TFLite '{config.MODEL_PATH}' tidak ditemukan! Aplikasi menolak menyala tanpa AI.")
-            print(
-                f"Model {config.MODEL_PATH} tidak ditemukan. Menggunakan mode dummy.")
+                    f"❌ ERROR: Model TFLite '{config.MODEL_PATH}' tidak ditemukan! Aplikasi menolak menyala tanpa AI."
+                )
+            print(f"Model {config.MODEL_PATH} tidak ditemukan. Menggunakan mode dummy.")
             return
 
         try:
@@ -96,7 +108,7 @@ class ObjectDetector:
         iou = interArea / float(boxAArea + boxBArea - interArea)
         return iou
 
-    def detect(self, frame: np.ndarray) -> List[Dict[str, Any]]:
+    def detect(self, frame: np.ndarray) -> list[dict[str, Any]]:
         self.last_annotated_frame = None
         self.has_occlusion = False
 
@@ -108,7 +120,7 @@ class ObjectDetector:
         else:
             return self._run_tflite_inference(frame)
 
-    def _run_yolo_inference(self, frame: np.ndarray) -> List[Dict[str, Any]]:
+    def _run_yolo_inference(self, frame: np.ndarray) -> list[dict[str, Any]]:
         try:
             # Turunkan threshold agar AI bisa mendeteksi bentuk walau remang-remang
             results = self.yolo_model(frame, conf=0.15, verbose=False)
@@ -118,69 +130,91 @@ class ObjectDetector:
                 r = results[0]
 
                 # Gunakan slot kelas 0 dan 1 agar tidak bentrok atau crash dengan sistem internal YOLO
-                r.names[0] = 'ayam'
-                r.names[1] = 'nasi'
+                r.names[0] = "ayam"
+                r.names[1] = "nasi"
 
                 if r.masks is not None and r.boxes is not None:
                     for i in range(len(r.boxes)):
                         cls_id = int(r.boxes.cls[i])
-                        class_name = 'nasi' if cls_id == 1 else 'ayam'
+                        class_name = "nasi" if cls_id == 1 else "ayam"
 
                         conf = float(r.boxes.conf[i])
                         x1, y1, x2, y2 = map(int, r.boxes.xyxy[i])
-                        detections.append({
-                            'class_id': cls_id,
-                            'class_name': class_name,
-                            'confidence': conf,
-                            'bbox': [x1, y1, x2, y2],
-                            'original_coco': 'any'
-                        })
-                        
+                        detections.append(
+                            {
+                                "class_id": cls_id,
+                                "class_name": class_name,
+                                "confidence": conf,
+                                "bbox": [x1, y1, x2, y2],
+                                "original_coco": "any",
+                            }
+                        )
+
                     # Cek Oklusi (Tumpang Tindih > 50%)
                     for i in range(len(detections)):
                         for j in range(i + 1, len(detections)):
-                            if self._calculate_iou(detections[i]['bbox'], detections[j]['bbox']) > 0.5:
+                            if (
+                                self._calculate_iou(detections[i]["bbox"], detections[j]["bbox"])
+                                > 0.5
+                            ):
                                 self.has_occlusion = True
 
                 # Plot dengan boxes=False dan labels=False agar tidak crash, lalu kita gambar labelnya sendiri
-                self.last_annotated_frame = r.plot(
-                    boxes=False, labels=False)
+                self.last_annotated_frame = r.plot(boxes=False, labels=False)
 
                 # Gambar label kustom secara manual
                 for det in detections:
-                    x1, y1, x2, y2 = det['bbox']
+                    x1, y1, x2, y2 = det["bbox"]
                     label = f"{det['class_name'].upper()} {det['confidence']:.2f}"
-                    (tw, th), _ = cv2.getTextSize(
-                        label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
                     # Gambar kotak hitam untuk background teks
-                    cv2.rectangle(self.last_annotated_frame, (x1, max(
-                        0, y1 - 25)), (x1 + tw + 10, max(0, y1)), (0, 0, 0), -1)
+                    cv2.rectangle(
+                        self.last_annotated_frame,
+                        (x1, max(0, y1 - 25)),
+                        (x1 + tw + 10, max(0, y1)),
+                        (0, 0, 0),
+                        -1,
+                    )
                     # Tulis teks Nasi/Ayam
-                    cv2.putText(self.last_annotated_frame, label, (x1 + 5, max(0, y1 - 8)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    cv2.putText(
+                        self.last_annotated_frame,
+                        label,
+                        (x1 + 5, max(0, y1 - 8)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 255),
+                        2,
+                    )
 
             return detections
 
         except Exception as e:
             import traceback
+
             error_msg = str(e)[:100]
             print("DETECTOR ERROR:", traceback.format_exc())
             err_frame = frame.copy()
-            cv2.putText(err_frame, "AI ERROR: " + error_msg, (20, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            cv2.putText(
+                err_frame,
+                "AI ERROR: " + error_msg,
+                (20, 50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 0, 255),
+                2,
+            )
             self.last_annotated_frame = err_frame
             return []
 
-    def _run_tflite_inference(self, frame: np.ndarray) -> List[Dict[str, Any]]:
+    def _run_tflite_inference(self, frame: np.ndarray) -> list[dict[str, Any]]:
         img = cv2.resize(frame, config.INPUT_SIZE)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.astype(np.float32) / 255.0
         img = np.expand_dims(img, axis=0)
 
-        self.interpreter.set_tensor(self.input_details[0]['index'], img)
+        self.interpreter.set_tensor(self.input_details[0]["index"], img)
         self.interpreter.invoke()
-        output_data = self.interpreter.get_tensor(
-            self.output_details[0]['index'])
+        output_data = self.interpreter.get_tensor(self.output_details[0]["index"])
 
         return self._parse_yolov8_output(output_data, frame.shape)
 
@@ -213,47 +247,54 @@ class ObjectDetector:
             yc = yc / config.INPUT_SIZE[1] * h
             bh = bh / config.INPUT_SIZE[1] * h
 
-            x1 = int(xc - bw/2)
-            y1 = int(yc - bh/2)
-            x2 = int(xc + bw/2)
-            y2 = int(yc + bh/2)
+            x1 = int(xc - bw / 2)
+            y1 = int(yc - bh / 2)
+            x2 = int(xc + bw / 2)
+            y2 = int(yc + bh / 2)
 
             class_name = self.labels.get(int(class_id), "unknown")
 
-            detections.append({
-                'class_id': int(class_id),
-                'class_name': class_name,
-                'confidence': float(score),
-                'bbox': [x1, y1, x2, y2]
-            })
+            detections.append(
+                {
+                    "class_id": int(class_id),
+                    "class_name": class_name,
+                    "confidence": float(score),
+                    "bbox": [x1, y1, x2, y2],
+                }
+            )
 
         return detections
 
-    def _dummy_detection(self, frame) -> List[Dict[str, Any]]:
+    def _dummy_detection(self, frame) -> list[dict[str, Any]]:
         detections = []
         import random
+
         if random.random() > 0.5:
             items = list(self.labels.values())
             chosen = random.choice(items)
-            detections.append({
-                'class_id': list(self.labels.values()).index(chosen),
-                'class_name': chosen,
-                'confidence': random.uniform(0.6, 0.99),
-                'bbox': [50, 50, 200, 200]
-            })
+            detections.append(
+                {
+                    "class_id": list(self.labels.values()).index(chosen),
+                    "class_name": chosen,
+                    "confidence": random.uniform(0.6, 0.99),
+                    "bbox": [50, 50, 200, 200],
+                }
+            )
         return detections
 
-    def consolidate_max_count(self, det1: List[Dict[str, Any]], det2: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def consolidate_max_count(
+        self, det1: list[dict[str, Any]], det2: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Menggabungkan deteksi 2 kamera dengan logika Max Count per kelas untuk menghindari perhitungan ganda."""
         from collections import defaultdict
 
         count1 = defaultdict(list)
         for d in det1:
-            count1[d['class_name']].append(d)
+            count1[d["class_name"]].append(d)
 
         count2 = defaultdict(list)
         for d in det2:
-            count2[d['class_name']].append(d)
+            count2[d["class_name"]].append(d)
 
         final_detections = []
         all_classes = set(list(count1.keys()) + list(count2.keys()))

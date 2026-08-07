@@ -1,8 +1,9 @@
-import time
 from abc import ABC, abstractmethod
+
 from dica.core.logger import get_logger
 
 logger = get_logger("DisplayManager")
+
 
 class BaseDisplay(ABC):
     @abstractmethod
@@ -28,6 +29,7 @@ class BaseDisplay(ABC):
 
 class HeadlessDisplay(BaseDisplay):
     """Opsi A: Tanpa layar khusus. Hanya menampilkan log sistem."""
+
     def init_display(self):
         logger.info("[DISPLAY] Headless mode initialized.")
 
@@ -46,6 +48,7 @@ class HeadlessDisplay(BaseDisplay):
 
 class LCD16x2Display(BaseDisplay):
     """Opsi C: Layar LCD 16x2 via I2C."""
+
     def __init__(self):
         self.lcd = None
 
@@ -74,10 +77,10 @@ class LCD16x2Display(BaseDisplay):
 
 class TFTDisplay(BaseDisplay):
     """Opsi B: Layar TFT Interaktif (PyGame/Tkinter)."""
+
     def init_display(self):
         logger.info("[DISPLAY] Inisialisasi Layar TFT Interaktif (GUI)...")
         # Placeholder untuk PyGame init
-        pass
 
     def show_welcome(self):
         logger.info("[TFT] Menampilkan UI Selamat Datang")

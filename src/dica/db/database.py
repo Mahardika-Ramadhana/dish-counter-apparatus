@@ -1,11 +1,9 @@
-import sqlite3
 import json
-import datetime
-import threading
-from typing import List, Dict, Any
-
-
 import os
+import sqlite3
+import threading
+from typing import Any
+
 
 class Database:
     def __init__(self, db_name="data/transaksi.db"):
@@ -18,7 +16,7 @@ class Database:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS transaksi (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             items TEXT NOT NULL,
@@ -26,15 +24,15 @@ class Database:
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             status_konfirmasi TEXT NOT NULL
         )
-        ''')
+        """)
 
         conn.commit()
         conn.close()
         print("Database berhasil diinisialisasi.")
 
-    def save_transaction(self, items: List[Dict[str, Any]], total: int):
+    def save_transaction(self, items: list[dict[str, Any]], total: int):
         """Simpan ke SQLite dengan Thread-Safe Lock."""
-        item_names = [item['class_name'] for item in items]
+        item_names = [item["class_name"] for item in items]
         items_json = json.dumps(item_names)
 
         with self.lock:
@@ -43,7 +41,7 @@ class Database:
 
             cursor.execute(
                 "INSERT INTO transaksi (items, total_harga, status_konfirmasi) VALUES (?, ?, ?)",
-                (items_json, total, "SELESAI")
+                (items_json, total, "SELESAI"),
             )
 
             conn.commit()
@@ -58,7 +56,7 @@ class Database:
 
         cursor.execute(
             "SELECT id, items, total_harga, timestamp FROM transaksi ORDER BY timestamp DESC LIMIT ?",
-            (limit,)
+            (limit,),
         )
         rows = cursor.fetchall()
 
@@ -66,12 +64,14 @@ class Database:
 
         results = []
         for row in rows:
-            results.append({
-                'id': row[0],
-                'items': json.loads(row[1]),
-                'total_harga': row[2],
-                'timestamp': row[3]
-            })
+            results.append(
+                {
+                    "id": row[0],
+                    "items": json.loads(row[1]),
+                    "total_harga": row[2],
+                    "timestamp": row[3],
+                }
+            )
 
         return results
 
@@ -89,12 +89,14 @@ class Database:
 
         results = []
         for row in rows:
-            results.append({
-                'id': row[0],
-                'items': json.loads(row[1]),
-                'total_harga': row[2],
-                'timestamp': row[3]
-            })
+            results.append(
+                {
+                    "id": row[0],
+                    "items": json.loads(row[1]),
+                    "total_harga": row[2],
+                    "timestamp": row[3],
+                }
+            )
 
         return results
 
