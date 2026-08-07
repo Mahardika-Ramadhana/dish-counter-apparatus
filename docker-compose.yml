@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  dica:
+    build: .
+    container_name: dica_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
+      - /dev/gpiomem:/dev/gpiomem
+    volumes:
+      - ./data:/app/data
+      - ./transaksi.db:/app/transaksi.db
+      - /dev/bus/usb:/dev/bus/usb # Akses USB untuk ESC/POS Thermal Printer
+    privileged: true
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+    network_mode: host

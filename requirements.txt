@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+opencv-python
+numpy
+matplotlib
+adafruit-circuitpython-hx711
+gpiozero
+Pillow
+pytest
+pytest-mock
+crcmod
+Flask
+qrcode
+ai-edge-litert
+ultralytics
+supabase
