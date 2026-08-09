@@ -8,11 +8,10 @@ Dokumen ini menjelaskan topologi Komputasi Terdistribusi *Edge-to-Cloud* yang di
 flowchart BT
     %% Lapisan Edge di bagian bawah
     subgraph LapisanEdge ["Lapisan Edge (Banyak Cabang UMKM / Edge Nodes)"]
-        direction LR
-        Cabang1["DICA Cabang Jakarta<br>(Inferensi AI & DB Lokal)"]
-        Cabang2["DICA Cabang Surabaya<br>(Inferensi AI & DB Lokal)"]
-        Cabang3["DICA Cabang Bandung<br>(Inferensi AI & DB Lokal)"]
-        CabangN["DICA Cabang ke-N...<br>(Inferensi AI & DB Lokal)"]
+        Cabang1["DICA Cabang Jakarta<br>(AI & DB Lokal)"]
+        Cabang2["DICA Cabang Surabaya<br>(AI & DB Lokal)"]
+        Cabang3["DICA Cabang Bandung<br>(AI & DB Lokal)"]
+        CabangN["DICA Cabang ke-N...<br>(AI & DB Lokal)"]
     end
 
     %% Jaringan Transmisi di tengah
