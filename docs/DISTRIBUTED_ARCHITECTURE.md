@@ -5,42 +5,42 @@ Dokumen ini menjelaskan topologi Komputasi Terdistribusi *Edge-to-Cloud* yang di
 ## Diagram Alur
 
 ```mermaid
-flowchart TD
-    %% Lapisan Multi-Cabang (Edge)
+flowchart BT
+    %% Lapisan Edge di bagian bawah
     subgraph LapisanEdge ["Lapisan Edge (Banyak Cabang UMKM / Edge Nodes)"]
         direction LR
-        Cabang1["🏪 DICA Cabang Jakarta<br>(Inferensi AI & DB Lokal)"]
-        Cabang2["🏪 DICA Cabang Surabaya<br>(Inferensi AI & DB Lokal)"]
-        Cabang3["🏪 DICA Cabang Bandung<br>(Inferensi AI & DB Lokal)"]
-        CabangN["🏪 DICA Cabang ke-N...<br>(Inferensi AI & DB Lokal)"]
+        Cabang1["DICA Cabang Jakarta<br>(Inferensi AI & DB Lokal)"]
+        Cabang2["DICA Cabang Surabaya<br>(Inferensi AI & DB Lokal)"]
+        Cabang3["DICA Cabang Bandung<br>(Inferensi AI & DB Lokal)"]
+        CabangN["DICA Cabang ke-N...<br>(Inferensi AI & DB Lokal)"]
     end
 
-    %% Jaringan Transmisi
-    Internet(("🌐 Jaringan Internet<br>Pengiriman Payload<br>JSON Ringan"))
+    %% Jaringan Transmisi di tengah
+    Internet(("Jaringan Internet<br>(Pengiriman Payload JSON Ringan)"))
 
-    %% Sinkronisasi dari Cabang ke Internet
+    %% Panah mengarah ke atas dari Cabang ke Internet
     Cabang1 -->|Sinkronisasi| Internet
     Cabang2 -->|Sinkronisasi| Internet
     Cabang3 -->|Sinkronisasi| Internet
     CabangN -->|Sinkronisasi| Internet
 
-    %% Lapisan Cloud Terpusat
+    %% Lapisan Cloud di atas Internet
     subgraph LapisanCloud ["Lapisan Cloud (Centralized Server)"]
-        Supabase[("☁️ Supabase<br>(Pangkalan Data Utama)")]
-        QRIS["💳 Payment Gateway API<br>(Verifikasi Pembayaran Nasional)"]
+        Supabase[("Supabase<br>(Pangkalan Data Utama)")]
+        QRIS["Payment Gateway API<br>(Verifikasi Pembayaran Nasional)"]
         Supabase <--> QRIS
     end
 
-    %% Agregasi dari Internet ke Cloud
+    %% Panah mengarah ke atas dari Internet ke Cloud
     Internet ==>|Agregasi Ribuan Transaksi| Supabase
 
-    %% Akses Terpusat (User)
+    %% Akses Pemilik di posisi paling atas
     subgraph AksesPemilik ["Akses Pemilik Waralaba (Franchise Owner)"]
-        Dashboard["💻 Dasbor Analitik Web<br>(Pantau Performa Seluruh Cabang)"]
-        Mobile["📱 Aplikasi Mobile<br>(Notifikasi Stok Lauk Real-Time)"]
+        Dashboard["Dasbor Analitik Web<br>(Pantau Performa Seluruh Cabang)"]
+        Mobile["Aplikasi Mobile<br>(Notifikasi Stok Lauk Real-Time)"]
     end
 
-    %% Aliran dari Cloud ke Pemilik
+    %% Panah mengarah ke atas dari Cloud ke Akses Pemilik
     Supabase ==>|Distribusi Big Data| Dashboard
     Supabase -.->|Push Notification| Mobile
 ```
