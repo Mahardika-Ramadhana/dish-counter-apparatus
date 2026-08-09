@@ -6,41 +6,43 @@ Dokumen ini menjelaskan topologi Komputasi Terdistribusi *Edge-to-Cloud* yang di
 
 ```mermaid
 flowchart TD
-    %% Lapisan Edge
-    subgraph Edge["Lapisan Edge (Beban Komputasi Berat)"]
-        direction TB
-        
-        subgraph CabangA["DICA Cabang A (Misal: Surabaya)"]
-            direction LR
-            SensorA["📸 Tangkapan Foto & <br>Timbangan Fisik"] --> InferensiA["🧠 Inferensi AI Lokal <br>(YOLO / TFLite)"]
-            InferensiA --> LokalA[("🗄️ Database Lokal <br>(SQLite)")]
-        end
-        
-        subgraph CabangB["DICA Cabang B (Misal: Malang)"]
-            direction LR
-            SensorB["📸 Tangkapan Foto & <br>Timbangan Fisik"] --> InferensiB["🧠 Inferensi AI Lokal <br>(YOLO / TFLite)"]
-            InferensiB --> LokalB[("🗄️ Database Lokal <br>(SQLite)")]
-        end
+    %% Lapisan Multi-Cabang (Edge)
+    subgraph LapisanEdge ["Lapisan Edge (Banyak Cabang UMKM / Edge Nodes)"]
+        direction LR
+        Cabang1["🏪 DICA Cabang Jakarta<br>(Inferensi AI & DB Lokal)"]
+        Cabang2["🏪 DICA Cabang Surabaya<br>(Inferensi AI & DB Lokal)"]
+        Cabang3["🏪 DICA Cabang Bandung<br>(Inferensi AI & DB Lokal)"]
+        CabangN["🏪 DICA Cabang ke-N...<br>(Inferensi AI & DB Lokal)"]
     end
 
-    %% Transmisi Jaringan
-    LokalA -- "Sinkronisasi Data JSON <br>(Hemat Bandwidth)" --> Supabase
-    LokalB -- "Sinkronisasi Data JSON <br>(Hemat Bandwidth)" --> Supabase
+    %% Jaringan Transmisi
+    Internet(("🌐 Jaringan Internet<br>Pengiriman Payload<br>JSON Ringan"))
 
-    %% Lapisan Cloud
-    subgraph Cloud["Lapisan Cloud (Beban Komputasi Ringan)"]
-        Supabase[("☁️ Pangkalan Data Pusat <br>(Supabase)")]
-        QRIS["💳 Autentikasi Pembayaran <br>(QRIS API)"]
+    %% Sinkronisasi dari Cabang ke Internet
+    Cabang1 -->|Sinkronisasi| Internet
+    Cabang2 -->|Sinkronisasi| Internet
+    Cabang3 -->|Sinkronisasi| Internet
+    CabangN -->|Sinkronisasi| Internet
+
+    %% Lapisan Cloud Terpusat
+    subgraph LapisanCloud ["Lapisan Cloud (Centralized Server)"]
+        Supabase[("☁️ Supabase<br>(Pangkalan Data Utama)")]
+        QRIS["💳 Payment Gateway API<br>(Verifikasi Pembayaran Nasional)"]
         Supabase <--> QRIS
     end
 
-    %% Lapisan Pengguna / Pemilik
-    subgraph Pengguna["Manajemen Pemilik Usaha (Owner)"]
-        Dashboard["📊 Dasbor Analitik Terpusat <br>(Pemantauan Seluruh Cabang)"]
+    %% Agregasi dari Internet ke Cloud
+    Internet ==>|Agregasi Ribuan Transaksi| Supabase
+
+    %% Akses Terpusat (User)
+    subgraph AksesPemilik ["Akses Pemilik Waralaba (Franchise Owner)"]
+        Dashboard["💻 Dasbor Analitik Web<br>(Pantau Performa Seluruh Cabang)"]
+        Mobile["📱 Aplikasi Mobile<br>(Notifikasi Stok Lauk Real-Time)"]
     end
 
-    %% Koneksi Cloud ke Dashboard
-    Supabase == "Agregasi Big Data Multi-Cabang <br>secara Real-Time" ===> Dashboard
+    %% Aliran dari Cloud ke Pemilik
+    Supabase ==>|Distribusi Big Data| Dashboard
+    Supabase -.->|Push Notification| Mobile
 ```
 
 ## Cara Kerja Implementasi Terdistribusi (Manajemen Skalabilitas Multi-Cabang)
