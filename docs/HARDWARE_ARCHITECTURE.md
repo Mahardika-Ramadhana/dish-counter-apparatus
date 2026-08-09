@@ -17,7 +17,6 @@ flowchart LR
     OrangePi["Orange Pi<br>(Pemroses Utama)"]
 
     %% Komponen Output (Sebelah Kanan)
-    Monitor["Layar Monitor<br>Non-Touchscreen"]
     RingLight["Lampu<br>Ring Light"]
     LCD35["Layar LCD 3.5 Inch<br>(Display Harga/QRIS)"]
     
@@ -36,7 +35,6 @@ flowchart LR
     Kamera2 -- "Kabel USB" --> OrangePi
 
     %% Output Fisik
-    OrangePi -- "Kabel HDMI &<br>Pin GPIO" --> Monitor
     OrangePi -- "Kabel Daya<br>USB 5V" --> RingLight
     OrangePi -- "Pin GPIO / SPI" --> LCD35
 
@@ -50,5 +48,5 @@ flowchart LR
 1. **Pemroses Utama:** Menggunakan **Orange Pi** (SBC) yang berperan sebagai otak komputasi untuk mengeksekusi model *Artificial Intelligence* (YOLO/TFLite) secara lokal di *Edge*.
 2. **Kamera Ganda:** Dua buah kamera USB yang digunakan untuk meminimalkan *blind spot* atau oklusi (makanan saling menumpuk/menutupi).
 3. **Sensor Fisik:** *Load cell* yang dihubungkan melalui modul konverter ADC HX711 untuk memberikan umpan balik (validasi stabilitas piring dan berat).
-4. **Display:** Menggunakan Layar Monitor utama dan ditambah dengan layar sekunder **LCD 3.5 Inch** via GPIO untuk menampilkan QRIS dan total harga dengan elegan.
+4. **Display:** Menggunakan layar **LCD 3.5 Inch** via GPIO/SPI untuk menampilkan harga total dan kode QRIS kepada pelanggan dengan ringkas dan elegan, menghilangkan ketergantungan pada monitor besar.
 5. **Jaringan:** Alat terkoneksi via WiFi Hotspot ke *Smartphone* penjual untuk memonitor dasbor web lokal.
