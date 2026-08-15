@@ -205,27 +205,38 @@ class App:
 
                 if atas_annotated is not None:
                     if samping_annotated is not None:
-                        # Gabungkan kedua frame secara horizontal (berdampingan)
                         import cv2
                         try:
-                            # Pastikan ukuran tinggi (height) sama sebelum digabung
                             h1, w1 = atas_annotated.shape[:2]
                             h2, w2 = samping_annotated.shape[:2]
                             if h1 != h2:
                                 samping_annotated = cv2.resize(samping_annotated, (int(w2 * h1 / h2), h1))
-                            gabung = cv2.hconcat([atas_annotated, samping_annotated])
-                            self.last_drawn_frame_bgr = gabung
+                            self.last_drawn_frame_bgr = cv2.hconcat([atas_annotated, samping_annotated])
                         except Exception as e:
-                            logger.error(f"Gagal menggabung gambar: {e}")
+                            logger.error(f"Gagal menggabung gambar annotated: {e}")
                             self.last_drawn_frame_bgr = atas_annotated
                     else:
                         self.last_drawn_frame_bgr = atas_annotated
                 else:
-                    self.last_drawn_frame_bgr = (
-                        frame_atas.copy()
-                        if frame_atas is not None
-                        else np.zeros((480, 640, 3), dtype=np.uint8)
-                    )
+                    # Fallback ke raw frame (misal saat mode dummy)
+                    if frame_atas is not None:
+                        if frame_samping is not None:
+                            import cv2
+                            try:
+                                h1, w1 = frame_atas.shape[:2]
+                                h2, w2 = frame_samping.shape[:2]
+                                if h1 != h2:
+                                    frame_samping_resized = cv2.resize(frame_samping, (int(w2 * h1 / h2), h1))
+                                else:
+                                    frame_samping_resized = frame_samping
+                                self.last_drawn_frame_bgr = cv2.hconcat([frame_atas, frame_samping_resized])
+                            except Exception as e:
+                                logger.error(f"Gagal menggabung gambar raw: {e}")
+                                self.last_drawn_frame_bgr = frame_atas.copy()
+                        else:
+                            self.last_drawn_frame_bgr = frame_atas.copy()
+                    else:
+                        self.last_drawn_frame_bgr = np.zeros((480, 640, 3), dtype=np.uint8)
 
             except queue.Empty:
                 pass  # Lanjutkan menunggu
