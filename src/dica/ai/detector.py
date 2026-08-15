@@ -145,7 +145,14 @@ class ObjectDetector:
                 if r.boxes is not None:
                     for i in range(len(r.boxes)):
                         cls_id = int(r.boxes.cls[i])
-                        class_name = r.names[cls_id]
+                        raw_class_name = r.names[cls_id]
+                        
+                        # Normalisasi format ke snake_case sesuai config.json
+                        class_name = raw_class_name.lower().replace(" ", "_")
+                        if class_name == "nasi":
+                            class_name = "nasi_porsi"
+                        elif class_name == "tahu_goreng":
+                            class_name = "tahu"
 
                         conf = float(r.boxes.conf[i])
                         x1, y1, x2, y2 = map(int, r.boxes.xyxy[i])
