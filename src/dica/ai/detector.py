@@ -55,15 +55,25 @@ class ObjectDetector:
                     )
 
             if YOLO_AVAILABLE:
-                print(
-                    "INFO: Menggunakan SOTA Model YOLO11 Nano Segment (yolo11n-seg.pt) untuk Uji Coba (Development)."
-                )
-                if not os.path.exists("models/yolo11n-seg.pt"):
-                    print("Model YOLO11 tidak ditemukan. Menggunakan mode dummy.")
-                    return
-                self.yolo_model = YOLO("models/yolo11n-seg.pt", task="segment")
-                self.is_dummy = False
-                return
+                print("INFO: Mencari model YOLO lokal untuk Development...")
+                model_paths = [
+                    "models/dica_2kelas.pt",
+                    "models/yolov8n-seg.pt",
+                    "models/yolov8n.pt",
+                    "models/yolo11n-seg.pt"
+                ]
+                
+                loaded = False
+                for p in model_paths:
+                    if os.path.exists(p):
+                        print(f"Menggunakan model {p}...")
+                        self.yolo_model = YOLO(p)
+                        self.is_dummy = False
+                        loaded = True
+                        break
+                
+                if not loaded:
+                    print("Model YOLO tidak ditemukan. Menggunakan mode dummy.")
 
         if not TFLITE_AVAILABLE:
             if getattr(config, "ENVIRONMENT", "development") == "production":
@@ -133,7 +143,7 @@ class ObjectDetector:
                 r.names[0] = "ayam"
                 r.names[1] = "nasi"
 
-                if r.masks is not None and r.boxes is not None:
+                if r.boxes is not None:
                     for i in range(len(r.boxes)):
                         cls_id = int(r.boxes.cls[i])
                         class_name = "nasi" if cls_id == 1 else "ayam"
