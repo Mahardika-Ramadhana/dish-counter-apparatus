@@ -36,7 +36,19 @@ class ObjectDetector:
         self.yolo_model = None
         self.input_details = None
         self.output_details = None
-        self.labels = {0: "ayam", 1: "nasi"}
+        self.labels = {
+            0: "ayam_goreng",
+            1: "ayam_rebus",
+            2: "nasi_porsi",
+            3: "sambal",
+            4: "sayur",
+            5: "tahu",
+            6: "telur",
+            7: "telur_balado",
+            8: "tempe",
+            9: "tempe_mendoan",
+            10: "ikan_lele"
+        }
         self.is_dummy = True
 
     def load_model(self):
