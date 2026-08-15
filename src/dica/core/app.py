@@ -193,7 +193,7 @@ class App:
                 det_samping = (
                     self.detector.detect(frame_samping) if frame_samping is not None else []
                 )
-                # samping_annotated = self.detector.last_annotated_frame
+                samping_annotated = self.detector.last_annotated_frame if frame_samping is not None else None
 
                 final_detections = self.detector.consolidate_max_count(det_atas, det_samping)
                 total_price = sum([config.HARGA.get(d["class_name"], 0) for d in final_detections])
@@ -204,7 +204,22 @@ class App:
                 self.sm.finish_processing(final_detections, total_price)
 
                 if atas_annotated is not None:
-                    self.last_drawn_frame_bgr = atas_annotated
+                    if samping_annotated is not None:
+                        # Gabungkan kedua frame secara horizontal (berdampingan)
+                        import cv2
+                        try:
+                            # Pastikan ukuran tinggi (height) sama sebelum digabung
+                            h1, w1 = atas_annotated.shape[:2]
+                            h2, w2 = samping_annotated.shape[:2]
+                            if h1 != h2:
+                                samping_annotated = cv2.resize(samping_annotated, (int(w2 * h1 / h2), h1))
+                            gabung = cv2.hconcat([atas_annotated, samping_annotated])
+                            self.last_drawn_frame_bgr = gabung
+                        except Exception as e:
+                            logger.error(f"Gagal menggabung gambar: {e}")
+                            self.last_drawn_frame_bgr = atas_annotated
+                    else:
+                        self.last_drawn_frame_bgr = atas_annotated
                 else:
                     self.last_drawn_frame_bgr = (
                         frame_atas.copy()
