@@ -7,26 +7,17 @@ import numpy as np
 from dica.core import config
 
 try:
-    import tflite_runtime.interpreter as tflite
+    from ultralytics import YOLO
 
-    TFLITE_AVAILABLE = True
-except ImportError:
-    try:
-        import ai_edge_litert.interpreter as tflite
-
-        TFLITE_AVAILABLE = True
-    except ImportError:
-        TFLITE_AVAILABLE = False
-        print(
-            "Peringatan: tflite_runtime / ai_edge_litert tidak ditemukan. Menggunakan mode dummy."
-        )
+    YOLO_AVAILABLE = True
+except ImportError as e:
+    print(f"DEBUG: Gagal memuat ultralytics. Alasan: {e}")
+    YOLO_AVAILABLE = False
 
 
 class ObjectDetector:
     def __init__(self):
-        self.interpreter = None
-        self.input_details = None
-        self.output_details = None
+        self.yolo_model = None
         self.labels = {
             0: "ayam_goreng",
             1: "ayam_rebus",
@@ -45,31 +36,31 @@ class ObjectDetector:
         self.has_occlusion = False
 
     def load_model(self):
-        if not TFLITE_AVAILABLE:
-            print("❌ ERROR: Library tflite_runtime tidak ditemukan! Aplikasi menolak menyala.")
+        if not YOLO_AVAILABLE:
+            print("❌ ERROR: Pustaka ultralytics tidak ditemukan! Aplikasi menolak menyala.")
             self.is_dummy = True
             return
 
         if not os.path.exists(config.MODEL_PATH):
             print(
-                f"❌ ERROR: Model TFLite '{config.MODEL_PATH}' tidak ditemukan! Aplikasi menggunakan dummy."
+                f"❌ ERROR: Model TFLite '{config.MODEL_PATH}' tidak ditemukan! Menggunakan dummy."
             )
             self.is_dummy = True
             return
 
         try:
-            self.interpreter = tflite.Interpreter(model_path=config.MODEL_PATH)
-            self.interpreter.allocate_tensors()
-            self.input_details = self.interpreter.get_input_details()
-            self.output_details = self.interpreter.get_output_details()
+            print(
+                f"INFO: Memuat model ringan {config.MODEL_PATH} menggunakan Ultralytics (Segmentasi)..."
+            )
+            # Kita paksa task='segment' agar ultralytics bisa memecah hasil tflite menjadi polygon
+            self.yolo_model = YOLO(config.MODEL_PATH, task="segment")
             self.is_dummy = False
-            print("Model TFLite berhasil dimuat.")
+            print("Model TFLite (Segmentasi) berhasil dimuat.")
         except Exception as e:
             print(f"Gagal memuat model: {e}")
             self.is_dummy = True
 
     def _calculate_iou(self, boxA, boxB):
-        # Calculate intersection over union for two boxes [x1,y1,x2,y2]
         xA = max(boxA[0], boxB[0])
         yA = max(boxA[1], boxB[1])
         xB = min(boxA[2], boxB[2])
@@ -92,55 +83,55 @@ class ObjectDetector:
         if self.is_dummy or frame is None:
             return self._dummy_detection(frame)
 
-        return self._run_tflite_inference(frame)
+        return self._run_yolo_inference(frame)
 
-    def _run_tflite_inference(self, frame: np.ndarray) -> list[dict[str, Any]]:
+    def _run_yolo_inference(self, frame: np.ndarray) -> list[dict[str, Any]]:
         try:
-            img = cv2.resize(frame, config.INPUT_SIZE)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = img.astype(np.float32) / 255.0
-            img = np.expand_dims(img, axis=0)
+            # Inference ringan di TFLite
+            results = self.yolo_model(frame, conf=config.CONFIDENCE_THRESHOLD, verbose=False)
+            detections = []
 
-            self.interpreter.set_tensor(self.input_details[0]["index"], img)
-            self.interpreter.invoke()
-            output_data = self.interpreter.get_tensor(self.output_details[0]["index"])
+            if len(results) > 0:
+                r = results[0]
 
-            detections = self._parse_yolov8_output(output_data, frame.shape)
+                if r.boxes is not None:
+                    for i in range(len(r.boxes)):
+                        cls_id = int(r.boxes.cls[i])
+                        raw_class_name = r.names[cls_id]
 
-            # Cek Oklusi
-            for i in range(len(detections)):
-                for j in range(i + 1, len(detections)):
-                    if self._calculate_iou(detections[i]["bbox"], detections[j]["bbox"]) > 0.5:
-                        self.has_occlusion = True
+                        # Normalisasi format ke snake_case sesuai config.json
+                        class_name = raw_class_name.lower().replace(" ", "_")
+                        if class_name == "nasi":
+                            class_name = "nasi_porsi"
+                        elif class_name == "tahu_goreng":
+                            class_name = "tahu"
 
-            # Draw annotations
-            self.last_annotated_frame = frame.copy()
-            for det in detections:
-                x1, y1, x2, y2 = det["bbox"]
-                label = f"{det['class_name'].upper()} {det['confidence']:.2f}"
+                        conf = float(r.boxes.conf[i])
+                        x1, y1, x2, y2 = map(int, r.boxes.xyxy[i])
+                        detections.append(
+                            {
+                                "class_id": cls_id,
+                                "class_name": class_name,
+                                "confidence": conf,
+                                "bbox": [x1, y1, x2, y2],
+                                "original_coco": "any",
+                            }
+                        )
 
-                # Draw box
-                cv2.rectangle(self.last_annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    # Cek Oklusi (Tumpang Tindih > 50%)
+                    for i in range(len(detections)):
+                        for j in range(i + 1, len(detections)):
+                            if (
+                                self._calculate_iou(detections[i]["bbox"], detections[j]["bbox"])
+                                > 0.5
+                            ):
+                                self.has_occlusion = True
 
-                (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                cv2.rectangle(
-                    self.last_annotated_frame,
-                    (x1, max(0, y1 - 25)),
-                    (x1 + tw + 10, max(0, y1)),
-                    (0, 0, 0),
-                    -1,
-                )
-                cv2.putText(
-                    self.last_annotated_frame,
-                    label,
-                    (x1 + 5, max(0, y1 - 8)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255, 255, 255),
-                    2,
-                )
+                # Biarkan Ultralytics merender Polygon Masker yang cantik secara otomatis!
+                self.last_annotated_frame = r.plot(boxes=True, labels=True)
 
             return detections
+
         except Exception as e:
             import traceback
 
@@ -158,53 +149,6 @@ class ObjectDetector:
             )
             self.last_annotated_frame = err_frame
             return []
-
-    def _parse_yolov8_output(self, output_data, frame_shape):
-        detections = []
-        out = output_data[0]
-
-        if out.shape[0] < out.shape[1]:
-            out = out.transpose()
-
-        boxes = out[:, :4]
-        scores = out[:, 4:]
-
-        class_ids = np.argmax(scores, axis=1)
-        max_scores = np.max(scores, axis=1)
-
-        mask = max_scores > config.CONFIDENCE_THRESHOLD
-
-        filtered_boxes = boxes[mask]
-        filtered_scores = max_scores[mask]
-        filtered_class_ids = class_ids[mask]
-
-        h, w = frame_shape[:2]
-
-        for box, score, class_id in zip(filtered_boxes, filtered_scores, filtered_class_ids):
-            xc, yc, bw, bh = box
-
-            xc = xc / config.INPUT_SIZE[0] * w
-            bw = bw / config.INPUT_SIZE[0] * w
-            yc = yc / config.INPUT_SIZE[1] * h
-            bh = bh / config.INPUT_SIZE[1] * h
-
-            x1 = int(xc - bw / 2)
-            y1 = int(yc - bh / 2)
-            x2 = int(xc + bw / 2)
-            y2 = int(yc + bh / 2)
-
-            class_name = self.labels.get(int(class_id), "unknown")
-
-            detections.append(
-                {
-                    "class_id": int(class_id),
-                    "class_name": class_name,
-                    "confidence": float(score),
-                    "bbox": [x1, y1, x2, y2],
-                }
-            )
-
-        return detections
 
     def _dummy_detection(self, frame) -> list[dict[str, Any]]:
         detections = []
