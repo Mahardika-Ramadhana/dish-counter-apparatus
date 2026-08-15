@@ -72,7 +72,9 @@ class ObjectDetector:
                         loaded = True
                         break
                 
-                if not loaded:
+                if loaded:
+                    return
+                else:
                     print("Model YOLO tidak ditemukan. Menggunakan mode dummy.")
 
         if not TFLITE_AVAILABLE:
