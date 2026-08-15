@@ -98,7 +98,7 @@ class LoadCell:
         if samples:
             avg_val = sum(samples) / len(samples)
             weight = (avg_val - self.offset) / self.scale
-            return max(0.0, weight)
+            return abs(weight)
         else:
             print("[Hardware Fail-Safe] Kabel timbangan terputus! Mencoba re-inisialisasi HX711...")
             self.init_loadcell()

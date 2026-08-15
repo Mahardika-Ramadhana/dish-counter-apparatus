@@ -231,6 +231,12 @@ class App:
             try:
                 weight = self.loadcell.read_weight()
                 self.sm.update_weight(weight)
+                
+                # Auto-trigger jika berat lebih dari 20 gram dan posisi kasir sedang nganggur
+                if weight > 20.0 and self.sm.state == 'IDLE':
+                    import logging
+                    logging.getLogger("MainAppHeadless").info(f"Berat {weight}g terdeteksi! Memicu kamera otomatis...")
+                    self.trigger_detection()
             except Exception as e:
                 logger.error(f"Error membaca Loadcell: {e}")
                 time.sleep(1)
