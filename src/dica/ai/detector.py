@@ -57,6 +57,7 @@ class ObjectDetector:
             if YOLO_AVAILABLE:
                 print("INFO: Mencari model YOLO lokal untuk Development...")
                 model_paths = [
+                    "models/best.pt",
                     "models/dica_2kelas.pt",
                     "models/yolov8n-seg.pt",
                     "models/yolov8n.pt",
@@ -141,14 +142,10 @@ class ObjectDetector:
             if len(results) > 0:
                 r = results[0]
 
-                # Gunakan slot kelas 0 dan 1 agar tidak bentrok atau crash dengan sistem internal YOLO
-                r.names[0] = "ayam"
-                r.names[1] = "nasi"
-
                 if r.boxes is not None:
                     for i in range(len(r.boxes)):
                         cls_id = int(r.boxes.cls[i])
-                        class_name = "nasi" if cls_id == 1 else "ayam"
+                        class_name = r.names[cls_id]
 
                         conf = float(r.boxes.conf[i])
                         x1, y1, x2, y2 = map(int, r.boxes.xyxy[i])
