@@ -186,7 +186,7 @@ class App:
                 frames = self.frame_queue.get(timeout=0.1)
                 frame_atas, frame_samping = frames
 
-                logger.info("YOLOv8 mulai memproses frame (Snapshot mode)...")
+                logger.info("YOLOv11 mulai memproses frame (Snapshot mode)...")
                 det_atas = self.detector.detect(frame_atas)
                 atas_annotated = self.detector.last_annotated_frame
 
