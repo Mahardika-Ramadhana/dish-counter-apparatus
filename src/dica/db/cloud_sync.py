@@ -38,7 +38,7 @@ class CloudSync:
             conn = sqlite3.connect(self.db_lokal)
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT id, items, total_harga, timestamp, status_konfirmasi FROM transaksi"
+                "SELECT id, items, total_harga, timestamp FROM transaksi"
             )
             rows = cursor.fetchall()
             conn.close()
@@ -59,7 +59,6 @@ class CloudSync:
                         "items": json.loads(row[1]),
                         "total_harga": row[2],
                         "timestamp": row[3],
-                        "status_konfirmasi": row[4],
                         "device_id": "DICA-PI-01",
                     }
                 )

@@ -12,7 +12,6 @@ Tabel utama yang digunakan adalah `transaksi` dengan skema berikut:
 | `items` | TEXT | List lauk yang dibeli dalam format JSON Array (misal: `["nasi_porsi", "ayam_goreng"]`) |
 | `total_harga` | INTEGER | Total tagihan transaksi (dalam Rupiah) |
 | `timestamp` | DATETIME DEFAULT CURRENT_TIMESTAMP | Waktu transaksi dilakukan secara otomatis dari sistem |
-| `status_konfirmasi` | TEXT | Status dari transaksi (contoh: `"SELESAI"`) |
 
 ### Diagram Entitas Lokal
 ```mermaid
@@ -22,7 +21,6 @@ erDiagram
         TEXT items "JSON Array String"
         INTEGER total_harga
         DATETIME timestamp
-        TEXT status_konfirmasi
     }
 ```
 
@@ -36,7 +34,6 @@ Database cloud berada di Supabase. Sinkronisasi memindahkan data dari tabel `tra
 | `items` | JSONB | List data menu/lauk |
 | `total_harga` | INTEGER | Tagihan |
 | `timestamp` | TIMESTAMPTZ | Waktu asli transaksi dari perangkat |
-| `status_konfirmasi` | TEXT | Status |
 | `device_id` | TEXT | Identitas mesin edge (Saat ini *hardcoded*: `"DICA-PI-01"`) |
 
 ## 3. Logika Sinkronisasi (Cloud Sync)

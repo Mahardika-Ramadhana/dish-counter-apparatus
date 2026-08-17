@@ -21,8 +21,7 @@ class Database:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             items TEXT NOT NULL,
             total_harga INTEGER NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status_konfirmasi TEXT NOT NULL
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
 
@@ -40,8 +39,8 @@ class Database:
             cursor = conn.cursor()
 
             cursor.execute(
-                "INSERT INTO transaksi (items, total_harga, status_konfirmasi) VALUES (?, ?, ?)",
-                (items_json, total, "SELESAI"),
+                "INSERT INTO transaksi (items, total_harga) VALUES (?, ?)",
+                (items_json, total),
             )
 
             conn.commit()
