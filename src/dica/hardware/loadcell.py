@@ -56,7 +56,7 @@ class LoadCell:
             print(f"Gagal inisialisasi HX711: {e}")
 
     def tare(self):
-        """Kalibrasi nol (piring kosong)."""
+        """Kalibrasi nol (piring kosong) dengan filter noise."""
         if not HX711_AVAILABLE or self.channel_a is None:
             if getattr(config, "ENVIRONMENT", "development") == "production":
                 raise RuntimeError(
@@ -68,37 +68,60 @@ class LoadCell:
 
         print("Melakukan tare (kalibrasi nol)...")
         samples = []
-        for _ in range(10):
+        for _ in range(15):
             try:
                 samples.append(self.channel_a.value)
             except Exception:
                 pass
-            time.sleep(0.1)
+            time.sleep(0.05)
 
         if samples:
-            self.offset = sum(samples) / len(samples)
+            samples.sort()
+            # Buang outlier (nilai ekstrem) jika sampel cukup
+            if len(samples) > 4:
+                valid_samples = samples[2:-2]
+            else:
+                valid_samples = samples
+            self.offset = sum(valid_samples) / len(valid_samples)
             print("Tare berhasil.")
         else:
             print("Gagal mengambil sampel untuk tare.")
 
     def read_weight(self) -> float:
-        """Baca berat rata-rata 5 sampel dalam gram."""
+        """Baca berat dalam gram dengan median filter dan deadband."""
         if not HX711_AVAILABLE or self.channel_a is None:
             # Dummy fallback yang statis agar layar tidak bergetar dan angka tidak berubah-ubah
             time.sleep(0.5)  # Simulasi jeda baca hardware
             return 235.0
 
         samples = []
-        for _ in range(5):
+        for _ in range(10):
             try:
                 samples.append(self.channel_a.value)
             except Exception as e:
                 print(f"[Hardware Fail-Safe] Error baca loadcell: {e}")
-            time.sleep(0.1)
+            time.sleep(0.05)
 
         if samples:
-            avg_val = sum(samples) / len(samples)
-            weight = (avg_val - self.offset) / self.scale
+            samples.sort()
+            # Buang outlier noise listrik
+            if len(samples) > 4:
+                valid_samples = samples[2:-2]
+            else:
+                valid_samples = samples
+                
+            avg_val = sum(valid_samples) / len(valid_samples)
+            
+            # Jika user belum mengubah scale, gunakan estimasi rata-rata loadcell 5kg (420.0)
+            # karena default 1.0 akan membuat noise 10 terbaca 10 gram.
+            effective_scale = self.scale if self.scale != 1.0 else 420.0
+            
+            weight = (avg_val - self.offset) / effective_scale
+            
+            # Deadband: Abaikan fluktuasi di bawah 5 gram (anggap piring kosong)
+            if abs(weight) < 5.0:
+                return 0.0
+                
             return abs(weight)
         else:
             print("[Hardware Fail-Safe] Kabel timbangan terputus! Mencoba re-inisialisasi HX711...")
