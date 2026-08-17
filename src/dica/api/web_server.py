@@ -34,7 +34,8 @@ def create_app(main_app):
 
     @app.route("/")
     def index():
-        return render_template("index.html", api_key=config.API_KEY)
+        import json
+        return render_template("index.html", api_key=config.API_KEY, prices=json.dumps(config.HARGA))
 
     @app.route("/customer")
     def customer():
@@ -43,13 +44,17 @@ def create_app(main_app):
     @app.route("/api/status")
     def status():
         items_data = []
-        for item in main_app.current_detections:
+        is_payment = main_app.transaction_state == "PAYMENT"
+        source_items = main_app.validated_items if is_payment else main_app.current_detections
+        total = main_app.validated_total if is_payment else main_app.current_total_price
+
+        for item in source_items:
             items_data.append({"name": item["class_name"], "price": item.get("harga", 0)})
 
         return jsonify(
             {
                 "state": main_app.transaction_state,
-                "total_price": main_app.current_total_price,
+                "total_price": total,
                 "items": items_data,
                 "weight": main_app.current_weight,
                 "auto_validate": main_app.auto_validate,
@@ -169,11 +174,21 @@ def create_app(main_app):
 
     @app.route("/api/qr")
     def qr_code():
-        # Generate QR code that points to this server (seller dashboard)
-        ip = request.host.split(":")[0]
-        url = f"http://{ip}:5000"
+        from dica.utils.qris import generate_dynamic_qris
+        
+        # Menggunakan QRIS Statis dasar (Default: Dummy DICA, bisa diganti dengan QRIS asli toko)
+        static_qris = getattr(config, "STATIC_QRIS", "00020101021126610014COM.GO-JEK.WWW01189360091439584610540210G9584610540303UMI51440014ID.CO.QRIS.WWW0215ID10265563222400303UMI5204581253033605802ID5923DICA, Makanan & Minuman6007CIREBON61054517162070703A01630459A4")
+        
+        # Ambil total harga jika dalam status PAYMENT
+        total = main_app.validated_total if main_app.transaction_state == "PAYMENT" else 0
+        
+        if total > 0:
+            qris_string = generate_dynamic_qris(static_qris, total)
+        else:
+            qris_string = static_qris
+            
         qr = qrcode.QRCode(version=1, box_size=8, border=2)
-        qr.add_data(url)
+        qr.add_data(qris_string)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
         buf = io.BytesIO()
