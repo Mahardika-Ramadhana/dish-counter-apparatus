@@ -199,12 +199,6 @@
 
         // Daftar Menu & Harga Dasar (dari config.json)
         const BasePrices = {{ prices | safe }};
-        // Tambahkan opsi setengah porsi khusus untuk nasi
-        if (BasePrices['nasi_porsi']) {
-            BasePrices['nasi (1.0 porsi)'] = BasePrices['nasi_porsi'];
-            BasePrices['nasi (0.5 porsi)'] = BasePrices['nasi_porsi'] / 2;
-            delete BasePrices['nasi_porsi'];
-        }
 
         function renderEditor() {
             const list = document.getElementById('itemList');

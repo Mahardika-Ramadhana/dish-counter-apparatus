@@ -42,6 +42,7 @@ class LoadCell:
             if dt_pin and sck_pin:
                 data = digitalio.DigitalInOut(dt_pin)
                 clock = digitalio.DigitalInOut(sck_pin)
+                clock.direction = digitalio.Direction.OUTPUT
                 self.hx711 = HX711(data, clock)
                 self.channel_a = AnalogIn(self.hx711, HX711.CHAN_A_GAIN_128)
                 print("HX711 berhasil diinisialisasi.")
