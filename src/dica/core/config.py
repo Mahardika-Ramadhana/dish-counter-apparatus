@@ -59,7 +59,10 @@ PIN_LOADCELL_SCK = 6
 PIN_TOMBOL = 17
 
 CAMERA_IDS = [0, 2]  # 0: Kamera Laptop (Atas), 2: Webcam (Samping)
-MODEL_PATH = "../../../models/best.tflite"
+MODEL_PATH = os.path.join(BASE_DIR, "..", "..", "..", "models", "best.tflite")
+if not os.path.exists(MODEL_PATH):
+    # Fallback jika dijalankan dari root folder
+    MODEL_PATH = "models/best.tflite"
 CONFIDENCE_THRESHOLD = 0.5
 INPUT_SIZE = (640, 640)
 
