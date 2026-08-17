@@ -263,6 +263,13 @@ class App:
                     import logging
                     logging.getLogger("MainAppHeadless").info(f"Berat {weight}g terdeteksi! Memicu kamera otomatis...")
                     self.trigger_detection()
+                    
+                # Auto-confirm jika piring diangkat (berat < 10g) saat menunggu pembayaran dalam mode otomatis
+                elif weight < 10.0 and self.sm.state == 'PAYMENT' and self.auto_validate:
+                    import logging
+                    logging.getLogger("MainAppHeadless").info("Piring diangkat! Pembayaran otomatis dikonfirmasi.")
+                    self.konfirmasi_pembayaran_via_web()
+                    
             except Exception as e:
                 logger.error(f"Error membaca Loadcell: {e}")
                 time.sleep(1)
