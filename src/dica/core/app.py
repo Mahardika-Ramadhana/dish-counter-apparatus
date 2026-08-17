@@ -261,7 +261,17 @@ class App:
                 # Auto-trigger jika berat lebih dari 20 gram dan posisi kasir sedang nganggur
                 if weight > 20.0 and self.sm.state == 'IDLE':
                     import logging
-                    logging.getLogger("MainAppHeadless").info(f"Berat {weight}g terdeteksi! Memicu kamera otomatis...")
+                    logger = logging.getLogger("MainAppHeadless")
+                    logger.info("Benda diletakkan. Menunggu tangan dilepas (stabilisasi 1.5 detik)...")
+                    
+                    # Tunggu sejenak agar tangan pembeli terlepas dari piring
+                    time.sleep(1.5)
+                    
+                    # Baca ulang berat yang sudah stabil tanpa tekanan tangan
+                    stable_weight = self.loadcell.read_weight()
+                    self.sm.update_weight(stable_weight)
+                    
+                    logger.info(f"Berat stabil {stable_weight}g didapat. Memicu kamera otomatis...")
                     self.trigger_detection()
                     
                 # Auto-confirm jika piring diangkat (berat < 10g) saat menunggu pembayaran dalam mode otomatis
